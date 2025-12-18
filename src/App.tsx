@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
 import 'highlight.js/styles/github.css';
 import 'katex/dist/katex.min.css';
@@ -514,7 +515,7 @@ function App() {
                 ) : (
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeHighlight, rehypeKatex]}
+                    rehypePlugins={[rehypeRaw, rehypeHighlight, rehypeKatex]}
                     components={markdownComponents}
                   >
                     {cellInfo.content}

@@ -80,6 +80,68 @@ body {
   margin-bottom: 4px;
 }
 
+/* 任务列表样式 */
+.markdown-body input[type="checkbox"] {
+  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.markdown-body li.task-list-item {
+  list-style-type: none;
+  margin-left: -1.5em;
+}
+
+.markdown-body ul.contains-task-list {
+  padding-left: 1.5em;
+}
+
+/* details/summary 折叠样式 */
+.markdown-body details {
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: var(--blockquote-bg, #f5f6f7);
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #dee0e3);
+}
+
+.markdown-body details summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px 0;
+  outline: none;
+}
+
+.markdown-body details summary:hover {
+  color: #3370ff;
+}
+
+.markdown-body details[open] summary {
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-color, #dee0e3);
+  padding-bottom: 8px;
+}
+
+/* 脚注样式 */
+.markdown-body .footnotes {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color, #dee0e3);
+  font-size: 13px;
+}
+
+.markdown-body .footnotes ol {
+  padding-left: 1.5em;
+}
+
+/* 删除线样式 */
+.markdown-body del {
+  text-decoration: line-through;
+  color: #8f959e;
+}
+
 .markdown-body blockquote {
   padding: 0 1em;
   color: #646a73;
