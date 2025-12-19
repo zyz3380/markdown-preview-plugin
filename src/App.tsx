@@ -34,6 +34,7 @@ mermaid.initialize({
   startOnLoad: false,
   theme: 'default',
   securityLevel: 'loose',
+  suppressErrorRendering: true,  // 抑制错误渲染
 });
 
 // 主题类型
@@ -107,6 +108,7 @@ const MermaidBlock = ({ code, theme }: { code: string; theme: ThemeMode }) => {
           startOnLoad: false,
           theme: theme === 'DARK' ? 'dark' : 'default',
           securityLevel: 'loose',
+          suppressErrorRendering: true,  // 抑制错误渲染
         });
         
         // 清理之前可能存在的 SVG 元素

@@ -1,6 +1,6 @@
 {
   "name": "markdown-preview-plugin",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "多维表格 Markdown 预览插件 - 选中单元格渲染 Markdown 内容",
   "output": "dist",
   "scripts": {
