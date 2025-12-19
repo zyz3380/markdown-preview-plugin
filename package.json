@@ -1,6 +1,6 @@
 {
   "name": "markdown-preview-plugin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "多维表格 Markdown 预览插件 - 选中单元格渲染 Markdown 内容",
   "output": "dist",
   "scripts": {
@@ -19,6 +19,7 @@
     "rehype-highlight": "^7.0.0",
     "rehype-katex": "^7.0.1",
     "rehype-raw": "^7.0.0",
+    "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0"
   },

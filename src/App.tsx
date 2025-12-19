@@ -3,6 +3,7 @@ import { bitable, FieldType, ITextField, IUrlField } from '@lark-base-open/js-sd
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import remarkBreaks from 'remark-breaks';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
@@ -514,7 +515,7 @@ function App() {
                   <MermaidBlock code={cellInfo.content.trim()} theme={theme} />
                 ) : (
                   <ReactMarkdown
-                    remarkPlugins={[remarkGfm, remarkMath]}
+                    remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]}
                     rehypePlugins={[rehypeRaw, rehypeHighlight, rehypeKatex]}
                     components={markdownComponents}
                   >
