@@ -1,6 +1,6 @@
 {
   "name": "markdown-preview-plugin",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "多维表格 Markdown 预览插件 - 选中单元格渲染 Markdown 内容",
   "output": "dist",
   "scripts": {
@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@lark-base-open/js-sdk": "^0.3.0",
+    "@types/html2canvas": "^0.5.35",
     "highlight.js": "^11.9.0",
+    "html2canvas": "^1.4.1",
     "katex": "^0.16.27",
     "mermaid": "^11.12.2",
     "react": "^18.2.0",

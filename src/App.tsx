@@ -8,8 +8,26 @@ import rehypeHighlight from 'rehype-highlight';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
-import 'highlight.js/styles/github.css';
+import html2canvas from 'html2canvas';
+import 'highlight.js/styles/vs2015.css';  // 使用深色主题
 import 'katex/dist/katex.min.css';
+
+// 字体大小选项
+type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
+
+const FONT_SIZE_MAP: Record<FontSize, number> = {
+  small: 12,
+  medium: 14,
+  large: 16,
+  xlarge: 18,
+};
+
+const FONT_SIZE_LABELS: Record<FontSize, string> = {
+  small: '小',
+  medium: '中',
+  large: '大',
+  xlarge: '特大',
+};
 
 // 初始化 mermaid
 mermaid.initialize({
@@ -270,7 +288,36 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [fontSize, setFontSize] = useState<FontSize>(() => {
+    // 从 localStorage 读取保存的字体大小
+    const saved = localStorage.getItem('markdown-preview-font-size');
+    return (saved as FontSize) || 'medium';
+  });
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [showFontMenu, setShowFontMenu] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const downloadMenuRef = useRef<HTMLDivElement>(null);
+  const fontMenuRef = useRef<HTMLDivElement>(null);
+
+  // 保存字体大小到 localStorage
+  useEffect(() => {
+    localStorage.setItem('markdown-preview-font-size', fontSize);
+  }, [fontSize]);
+
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) {
+        setShowDownloadMenu(false);
+      }
+      if (fontMenuRef.current && !fontMenuRef.current.contains(event.target as Node)) {
+        setShowFontMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // 复制原始 Markdown
   const copyMarkdown = useCallback(async () => {
@@ -302,6 +349,64 @@ function App() {
   // 切换全屏
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
+  }, []);
+
+  // 下载为 Markdown 文件
+  const downloadAsMarkdown = useCallback(() => {
+    if (!cellInfo?.content) return;
+    
+    const blob = new Blob([cellInfo.content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${cellInfo.fieldName || 'markdown'}_${new Date().toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    setCopySuccess('已下载 Markdown 文件');
+    setTimeout(() => setCopySuccess(null), 2000);
+    setShowDownloadMenu(false);
+  }, [cellInfo]);
+
+  // 下载为图片
+  const downloadAsImage = useCallback(async () => {
+    if (!contentRef.current) return;
+    
+    try {
+      setCopySuccess('正在生成图片...');
+      
+      // 使用 html2canvas 将内容转换为 canvas
+      const canvas = await html2canvas(contentRef.current, {
+        useCORS: true,
+        logging: false,
+      } as any);
+      
+      // 转换为图片并下载
+      const url = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${cellInfo?.fieldName || 'markdown'}_${new Date().toISOString().slice(0, 10)}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setCopySuccess('已下载图片');
+      setTimeout(() => setCopySuccess(null), 2000);
+    } catch (err) {
+      console.error('生成图片失败:', err);
+      setCopySuccess('生成图片失败');
+      setTimeout(() => setCopySuccess(null), 2000);
+    }
+    
+    setShowDownloadMenu(false);
+  }, [theme, cellInfo]);
+
+  // 切换字体大小
+  const changeFontSize = useCallback((size: FontSize) => {
+    setFontSize(size);
+    setShowFontMenu(false);
   }, []);
 
   // 获取单元格内容
@@ -433,14 +538,84 @@ function App() {
   };
 
   return (
-    <div className={`${theme === 'DARK' ? 'dark-theme' : ''} ${isFullscreen ? 'fullscreen-mode' : ''}`}>
+    <div
+      className={`${theme === 'DARK' ? 'dark-theme' : ''} ${isFullscreen ? 'fullscreen-mode' : ''}`}
+      style={{ '--markdown-font-size': `${FONT_SIZE_MAP[fontSize]}px` } as React.CSSProperties}
+    >
       <div className="plugin-header">
         <h1>📝 Markdown 预览</h1>
         {cellInfo && (
           <div className="header-actions">
-            <button 
-              className="action-btn" 
-              onClick={copyMarkdown} 
+            {/* 字体大小控制 */}
+            <div className="dropdown-container" ref={fontMenuRef}>
+              <button
+                className="action-btn"
+                onClick={() => setShowFontMenu(!showFontMenu)}
+                title="调整字体大小"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 7V4h16v3"></path>
+                  <path d="M9 20h6"></path>
+                  <path d="M12 4v16"></path>
+                </svg>
+                <span>{FONT_SIZE_LABELS[fontSize]}</span>
+              </button>
+              {showFontMenu && (
+                <div className="dropdown-menu">
+                  {(Object.keys(FONT_SIZE_MAP) as FontSize[]).map((size) => (
+                    <button
+                      key={size}
+                      className={`dropdown-item ${fontSize === size ? 'active' : ''}`}
+                      onClick={() => changeFontSize(size)}
+                    >
+                      <span style={{ fontSize: `${FONT_SIZE_MAP[size]}px` }}>A</span>
+                      <span>{FONT_SIZE_LABELS[size]} ({FONT_SIZE_MAP[size]}px)</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* 下载按钮 */}
+            <div className="dropdown-container" ref={downloadMenuRef}>
+              <button
+                className="action-btn"
+                onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+                title="下载"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>下载</span>
+              </button>
+              {showDownloadMenu && (
+                <div className="dropdown-menu">
+                  <button className="dropdown-item" onClick={downloadAsImage}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>下载为图片 (PNG)</span>
+                  </button>
+                  <button className="dropdown-item" onClick={downloadAsMarkdown}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    <span>下载为 Markdown</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              className="action-btn"
+              onClick={copyMarkdown}
               title="复制 Markdown"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -449,9 +624,9 @@ function App() {
               </svg>
               <span>MD</span>
             </button>
-            <button 
-              className="action-btn" 
-              onClick={copyHtml} 
+            <button
+              className="action-btn"
+              onClick={copyHtml}
               title="复制 HTML"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -460,9 +635,9 @@ function App() {
               </svg>
               <span>HTML</span>
             </button>
-            <button 
-              className="action-btn" 
-              onClick={toggleFullscreen} 
+            <button
+              className="action-btn"
+              onClick={toggleFullscreen}
               title={isFullscreen ? '退出全屏' : '全屏预览'}
             >
               {isFullscreen ? (
