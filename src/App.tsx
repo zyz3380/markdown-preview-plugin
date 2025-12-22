@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Markdown Preview Plugin for Feishu Bitable
+ * @description 飞书多维表格 Markdown 预览插件主组件
+ * @version 1.0.4
+ * @license MIT
+ */
+
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { bitable, FieldType, ITextField, IUrlField } from '@lark-base-open/js-sdk';
 import ReactMarkdown from 'react-markdown';
@@ -9,38 +16,20 @@ import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import mermaid from 'mermaid';
 import html2canvas from 'html2canvas';
-import 'highlight.js/styles/vs2015.css';  // 使用深色主题
+import 'highlight.js/styles/vs2015.css';
 import 'katex/dist/katex.min.css';
 
-// 字体大小选项
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+/** Font size options for the preview */
 type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 
-const FONT_SIZE_MAP: Record<FontSize, number> = {
-  small: 12,
-  medium: 14,
-  large: 16,
-  xlarge: 18,
-};
-
-const FONT_SIZE_LABELS: Record<FontSize, string> = {
-  small: '小',
-  medium: '中',
-  large: '大',
-  xlarge: '特大',
-};
-
-// 初始化 mermaid
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'default',
-  securityLevel: 'loose',
-  suppressErrorRendering: true,  // 抑制错误渲染
-});
-
-// 主题类型
+/** Theme mode from Bitable */
 type ThemeMode = 'LIGHT' | 'DARK';
 
-// 单元格信息
+/** Cell information structure */
 interface CellInfo {
   tableId: string;
   tableName: string;
@@ -51,47 +40,127 @@ interface CellInfo {
   fieldType: FieldType;
 }
 
-// 检测内容是否是纯 Mermaid 语法
+// ============================================================================
+// Constants
+// ============================================================================
+
+/** Font size value mapping (in pixels) */
+const FONT_SIZE_MAP: Record<FontSize, number> = {
+  small: 12,
+  medium: 14,
+  large: 16,
+  xlarge: 18,
+};
+
+/** Font size display labels */
+const FONT_SIZE_LABELS: Record<FontSize, string> = {
+  small: '小',
+  medium: '中',
+  large: '大',
+  xlarge: '特大',
+};
+
+/** Mermaid diagram type keywords for content detection */
+const MERMAID_KEYWORDS = [
+  'graph ', 'graph\n',
+  'flowchart ', 'flowchart\n',
+  'sequenceDiagram',
+  'classDiagram',
+  'stateDiagram',
+  'erDiagram',
+  'journey',
+  'gantt',
+  'pie ', 'pie\n',
+  'gitGraph',
+  'mindmap',
+  'timeline',
+  'quadrantChart',
+  'sankey',
+  'xychart',
+  'block-beta',
+  'C4Context',
+  'C4Container',
+  'C4Component',
+  'C4Dynamic',
+  'C4Deployment',
+  'architecture',
+  'zenuml',
+  'requirement',
+  'packet',
+  'kanban',
+] as const;
+
+// ============================================================================
+// Mermaid Configuration
+// ============================================================================
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'default',
+  securityLevel: 'loose',
+  suppressErrorRendering: true,
+});
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Detects if content is pure Mermaid diagram syntax
+ * @param content - The content to check
+ * @returns True if content starts with a Mermaid keyword
+ */
 const isMermaidContent = (content: string): boolean => {
   const trimmed = content.trim();
-  // Mermaid 图表类型关键词
-  const mermaidKeywords = [
-    'graph ', 'graph\n',
-    'flowchart ', 'flowchart\n',
-    'sequenceDiagram',
-    'classDiagram',
-    'stateDiagram',
-    'erDiagram',
-    'journey',
-    'gantt',
-    'pie ',
-    'pie\n',
-    'gitGraph',
-    'mindmap',
-    'timeline',
-    'quadrantChart',
-    'sankey',
-    'xychart',
-    'block-beta',
-    'C4Context',
-    'C4Container',
-    'C4Component',
-    'C4Dynamic',
-    'C4Deployment',
-    'architecture',
-    'zenuml',
-    'requirement',
-    'packet',
-    'kanban',
-  ];
-  
-  // 检查是否以 mermaid 关键词开头
-  return mermaidKeywords.some(keyword =>
+  return MERMAID_KEYWORDS.some(keyword =>
     trimmed.startsWith(keyword) || trimmed.toLowerCase().startsWith(keyword.toLowerCase())
   );
 };
 
-// Mermaid 代码块渲染组件
+/**
+ * Copies text to clipboard with fallback support
+ * @param text - Text to copy
+ * @returns Promise resolving to success status
+ */
+const copyToClipboard = async (text: string): Promise<boolean> => {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.warn('Clipboard API failed, trying fallback:', err);
+    }
+  }
+  
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    textArea.style.top = '-9999px';
+    textArea.style.opacity = '0';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    
+    return successful;
+  } catch (err) {
+    console.error('Fallback copy also failed:', err);
+    return false;
+  }
+};
+
+// ============================================================================
+// Components
+// ============================================================================
+
+/**
+ * Mermaid diagram rendering component
+ */
 const MermaidBlock = ({ code, theme }: { code: string; theme: ThemeMode }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svg, setSvg] = useState<string>('');
@@ -103,15 +172,13 @@ const MermaidBlock = ({ code, theme }: { code: string; theme: ThemeMode }) => {
       if (!code) return;
       
       try {
-        // 更新 mermaid 主题
         mermaid.initialize({
           startOnLoad: false,
           theme: theme === 'DARK' ? 'dark' : 'default',
           securityLevel: 'loose',
-          suppressErrorRendering: true,  // 抑制错误渲染
+          suppressErrorRendering: true,
         });
         
-        // 清理之前可能存在的 SVG 元素
         const existingSvg = document.getElementById(idRef.current);
         if (existingSvg) {
           existingSvg.remove();
@@ -121,7 +188,7 @@ const MermaidBlock = ({ code, theme }: { code: string; theme: ThemeMode }) => {
         setSvg(svg);
         setError(null);
       } catch (err) {
-        console.error('Mermaid 渲染失败:', err);
+        console.error('Mermaid render failed:', err);
         setError('图表渲染失败');
       }
     };
@@ -147,44 +214,9 @@ const MermaidBlock = ({ code, theme }: { code: string; theme: ThemeMode }) => {
   );
 };
 
-// 复制到剪贴板的辅助函数（兼容性方案）
-const copyToClipboard = async (text: string): Promise<boolean> => {
-  // 首先尝试使用 Clipboard API
-  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch (err) {
-      console.warn('Clipboard API 失败，尝试备用方案:', err);
-    }
-  }
-  
-  // 备用方案：使用 document.execCommand
-  try {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    
-    // 设置样式使其不可见
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-9999px';
-    textArea.style.top = '-9999px';
-    textArea.style.opacity = '0';
-    
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    
-    const successful = document.execCommand('copy');
-    document.body.removeChild(textArea);
-    
-    return successful;
-  } catch (err) {
-    console.error('备用复制方案也失败:', err);
-    return false;
-  }
-};
-
-// 代码块复制按钮组件
+/**
+ * Copy button component for code blocks
+ */
 const CopyButton = ({ code }: { code: string }) => {
   const [copied, setCopied] = useState(false);
 
@@ -212,7 +244,7 @@ const CopyButton = ({ code }: { code: string }) => {
   );
 };
 
-// 代码块组件 - 定义在外部以避免重复创建
+/** Props for CodeBlock component */
 interface CodeBlockProps {
   className?: string;
   children?: React.ReactNode;
@@ -235,14 +267,17 @@ const CodeBlock = ({ className, children, theme }: CodeBlockProps) => {
   );
 };
 
-// Pre 组件 - 处理代码块容器
+/** Props for PreBlock component */
 interface PreBlockProps {
   children?: React.ReactNode;
   theme: ThemeMode;
 }
 
+/**
+ * Pre block wrapper component for code blocks
+ * Handles Mermaid diagrams and adds copy buttons
+ */
 const PreBlock = ({ children, theme }: PreBlockProps) => {
-  // 检查子元素是否是 code 元素
   const childArray = React.Children.toArray(children);
   const codeChild = childArray.find(
     (child): child is React.ReactElement =>
@@ -255,12 +290,10 @@ const PreBlock = ({ children, theme }: PreBlockProps) => {
     const language = match ? match[1] : '';
     const code = String(codeChild.props.children).replace(/\n$/, '');
 
-    // Mermaid 图表不需要 pre 包装
     if (language === 'mermaid') {
       return <MermaidBlock code={code} theme={theme} />;
     }
 
-    // 普通代码块，添加复制按钮
     return (
       <div className="code-block-wrapper">
         <CopyButton code={code} />
@@ -272,7 +305,9 @@ const PreBlock = ({ children, theme }: PreBlockProps) => {
   return <pre>{children}</pre>;
 };
 
-// 空状态组件
+/**
+ * Empty state component shown when no cell is selected
+ */
 const EmptyState = () => (
   <div className="empty-state">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -283,6 +318,13 @@ const EmptyState = () => (
   </div>
 );
 
+// ============================================================================
+// Main Application Component
+// ============================================================================
+
+/**
+ * Main application component for Markdown Preview Plugin
+ */
 function App() {
   const [theme, setTheme] = useState<ThemeMode>('LIGHT');
   const [cellInfo, setCellInfo] = useState<CellInfo | null>(null);
@@ -291,7 +333,6 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<FontSize>(() => {
-    // 从 localStorage 读取保存的字体大小
     const saved = localStorage.getItem('markdown-preview-font-size');
     return (saved as FontSize) || 'medium';
   });
@@ -301,12 +342,12 @@ function App() {
   const downloadMenuRef = useRef<HTMLDivElement>(null);
   const fontMenuRef = useRef<HTMLDivElement>(null);
 
-  // 保存字体大小到 localStorage
+  // Persist font size preference
   useEffect(() => {
     localStorage.setItem('markdown-preview-font-size', fontSize);
   }, [fontSize]);
 
-  // 点击外部关闭下拉菜单
+  // Close dropdown menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) {
@@ -321,7 +362,7 @@ function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 复制原始 Markdown
+  /** Copy raw Markdown content */
   const copyMarkdown = useCallback(async () => {
     if (!cellInfo?.content) return;
     
@@ -334,7 +375,7 @@ function App() {
     setTimeout(() => setCopySuccess(null), 2000);
   }, [cellInfo]);
 
-  // 复制渲染后的 HTML
+  /** Copy rendered HTML content */
   const copyHtml = useCallback(async () => {
     if (!contentRef.current) return;
     
@@ -348,12 +389,12 @@ function App() {
     setTimeout(() => setCopySuccess(null), 2000);
   }, []);
 
-  // 切换全屏
+  /** Toggle fullscreen mode */
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
   }, []);
 
-  // 下载为 Markdown 文件
+  /** Download content as Markdown file */
   const downloadAsMarkdown = useCallback(() => {
     if (!cellInfo?.content) return;
     
@@ -372,20 +413,18 @@ function App() {
     setShowDownloadMenu(false);
   }, [cellInfo]);
 
-  // 下载为图片
+  /** Download content as PNG image */
   const downloadAsImage = useCallback(async () => {
     if (!contentRef.current) return;
     
     try {
       setCopySuccess('正在生成图片...');
       
-      // 使用 html2canvas 将内容转换为 canvas
       const canvas = await html2canvas(contentRef.current, {
         useCORS: true,
         logging: false,
       } as any);
       
-      // 转换为图片并下载
       const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.href = url;
@@ -397,7 +436,7 @@ function App() {
       setCopySuccess('已下载图片');
       setTimeout(() => setCopySuccess(null), 2000);
     } catch (err) {
-      console.error('生成图片失败:', err);
+      console.error('Failed to generate image:', err);
       setCopySuccess('生成图片失败');
       setTimeout(() => setCopySuccess(null), 2000);
     }
@@ -405,19 +444,18 @@ function App() {
     setShowDownloadMenu(false);
   }, [theme, cellInfo]);
 
-  // 切换字体大小
+  /** Change font size setting */
   const changeFontSize = useCallback((size: FontSize) => {
     setFontSize(size);
     setShowFontMenu(false);
   }, []);
 
-  // 获取单元格内容
+  /** Fetch cell content from Bitable */
   const fetchCellContent = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // 获取当前选中的单元格
       const selection = await bitable.base.getSelection();
       
       if (!selection.tableId || !selection.fieldId || !selection.recordId) {
@@ -426,17 +464,14 @@ function App() {
         return;
       }
 
-      // 获取表格
       const table = await bitable.base.getTableById(selection.tableId);
       const tableName = await table.getName();
 
-      // 获取字段
       const field = await table.getFieldById(selection.fieldId);
       const fieldMeta = await field.getMeta();
       const fieldName = fieldMeta.name;
       const fieldType = fieldMeta.type;
 
-      // 支持文本类型和 URL 类型字段
       if (fieldType !== FieldType.Text && fieldType !== FieldType.Url) {
         setError('请选择文本或 URL 类型的单元格');
         setCellInfo(null);
@@ -447,23 +482,19 @@ function App() {
       let content = '';
 
       if (fieldType === FieldType.Text) {
-        // 获取文本单元格值
         const textField = field as ITextField;
         const cellValue = await textField.getValue(selection.recordId);
         
-        // 提取文本内容
         if (cellValue && Array.isArray(cellValue)) {
           content = cellValue.map((item: { text: string }) => item.text).join('');
         } else if (typeof cellValue === 'string') {
           content = cellValue;
         }
       } else if (fieldType === FieldType.Url) {
-        // 获取 URL 单元格值
         const urlField = field as IUrlField;
         const cellValue = await urlField.getValue(selection.recordId);
         
         if (cellValue && typeof cellValue === 'object') {
-          // URL 字段可能包含 text 和 link 属性
           const urlValue = cellValue as { text?: string; link?: string };
           content = urlValue.text || urlValue.link || '';
         } else if (typeof cellValue === 'string') {
@@ -481,32 +512,27 @@ function App() {
         fieldType
       });
     } catch (err) {
-      console.error('获取单元格内容失败:', err);
+      console.error('Failed to fetch cell content:', err);
       setError('获取单元格内容失败，请重试');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // 初始化：获取主题和监听变化
+  // Initialize theme and set up event listeners
   useEffect(() => {
     const init = async () => {
-      // 获取当前主题
       const currentTheme = await bitable.bridge.getTheme();
       setTheme(currentTheme as ThemeMode);
-
-      // 获取初始选中的单元格
       await fetchCellContent();
     };
 
     init();
 
-    // 监听主题变化
     const unsubscribeTheme = bitable.bridge.onThemeChange((event) => {
       setTheme(event.data.theme as ThemeMode);
     });
 
-    // 监听选择变化
     const unsubscribeSelection = bitable.base.onSelectionChange(async () => {
       await fetchCellContent();
     });
@@ -517,7 +543,7 @@ function App() {
     };
   }, [fetchCellContent]);
 
-  // 使用 useMemo 创建 components 对象，避免每次渲染都创建新对象
+  // Memoized markdown component overrides
   const markdownComponents = useMemo(() => ({
     pre: ({ children }: { children?: React.ReactNode }) => (
       <PreBlock theme={theme}>{children}</PreBlock>
@@ -527,7 +553,7 @@ function App() {
     ),
   }), [theme]);
 
-  // 获取字段类型显示名称
+  /** Get display name for field type */
   const getFieldTypeName = (type: FieldType) => {
     switch (type) {
       case FieldType.Text:
@@ -687,7 +713,6 @@ function App() {
           <div className="content-wrapper">
             {cellInfo.content ? (
               <div className="markdown-body" ref={contentRef}>
-                {/* 检测是否是纯 Mermaid 内容 */}
                 {isMermaidContent(cellInfo.content) ? (
                   <MermaidBlock code={cellInfo.content.trim()} theme={theme} />
                 ) : (

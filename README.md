@@ -1,149 +1,194 @@
-# Markdown 预览插件
+# Markdown Preview Plugin for Feishu Bitable
 
-多维表格边栏插件 - 选中单元格后渲染 Markdown 内容
+[English](#english) | [中文](#中文)
 
-## 功能特性
+---
 
-- 📝 实时预览：选中文本或 URL 单元格后自动渲染 Markdown 内容
-- 🎨 支持 GFM：支持 GitHub Flavored Markdown 语法（表格、任务列表、删除线等）
-- 🌗 主题适配：自动适配多维表格的浅色/深色主题
-- 💡 代码高亮：支持多种编程语言的语法高亮
-- 📊 Mermaid 图表：支持流程图、时序图、甘特图等
-- 🔢 数学公式：支持 LaTeX 数学公式（KaTeX）
-- 📋 复制功能：一键复制原始 Markdown 或渲染后的 HTML
-- 🖥️ 全屏预览：支持全屏模式查看长内容
+<a name="中文"></a>
+## 中文文档
 
-## 支持的 Markdown 语法
+### 📋 项目简介
 
-- 标题 (h1-h6)
-- 粗体、斜体、删除线
-- 有序列表、无序列表、任务列表
-- 代码块和行内代码
-- 表格
-- 引用块
-- 链接和图片
-- 分隔线
-- **Mermaid 图表**（流程图、时序图、甘特图等）
-- **数学公式**（行内公式 `$...$`，块级公式 `$$...$$`）
+Markdown 预览插件是一款专为飞书多维表格设计的边栏插件，可以实时渲染单元格中的 Markdown 内容，提供专业的文档预览体验。
 
-## 使用方法
+### ✨ 功能特性
 
-### 本地开发
+| 功能 | 描述 |
+|------|------|
+| 📝 实时预览 | 选中文本或 URL 单元格后自动渲染 Markdown 内容 |
+| 🎨 GFM 支持 | 完整支持 GitHub Flavored Markdown 语法 |
+| 🌗 主题适配 | 自动适配多维表格的浅色/深色主题 |
+| 💻 代码高亮 | 支持 180+ 种编程语言的语法高亮 |
+| 📊 Mermaid 图表 | 支持流程图、时序图、甘特图、思维导图等 |
+| 🔢 数学公式 | 支持 LaTeX 数学公式 (KaTeX) |
+| 📋 一键复制 | 支持复制原始 Markdown 或渲染后的 HTML |
+| 🖥️ 全屏预览 | 支持全屏模式查看长内容 |
+| 📥 导出功能 | 支持导出为 Markdown 文件或 PNG 图片 |
+| 🔤 字体调节 | 支持小/中/大/特大四种字体大小 |
 
-1. 安装依赖
+### 🛠️ 技术栈
+
+- **前端框架**: React 18 + TypeScript
+- **构建工具**: Vite 5
+- **Markdown 渲染**: react-markdown + remark-gfm
+- **代码高亮**: highlight.js
+- **数学公式**: KaTeX
+- **图表渲染**: Mermaid
+- **飞书 SDK**: @lark-base-open/js-sdk
+
+### 📦 安装与部署
+
+#### 方式一：直接使用构建产物
+
+项目已包含预构建的 `dist` 目录，可直接部署到任意静态服务器。
+
 ```bash
-cd markdown-preview-plugin
+# 克隆仓库
+git clone https://github.com/your-username/markdown-preview-plugin.git
+
+# 将 dist 目录部署到静态服务器
+```
+
+#### 方式二：本地开发
+
+```bash
+# 安装依赖
 npm install
-```
 
-2. 启动开发服务器
-```bash
+# 启动开发服务器
 npm run dev
-```
 
-3. 在多维表格中添加自定义插件
-   - 打开任意多维表格
-   - 点击「插件」展开插件面板
-   - 点击「自定义插件」 → 「+新增插件」
-   - 输入运行地址：`http://localhost:8080`
-   - 点击确定
-
-4. 选中一个文本类型的单元格，插件会自动渲染其中的 Markdown 内容
-
-### 打包发布
-
-```bash
+# 构建生产版本
 npm run build
+
+# 预览生产版本
+npm run preview
 ```
 
-打包后的文件在 `dist` 目录中，可以部署到任意静态服务器或提交到多维表格插件中心。
+#### 方式三：Vercel 一键部署
 
-### 部署到 Vercel
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/markdown-preview-plugin)
 
-#### 方式一：通过 Vercel CLI 部署
+### 📖 使用指南
 
-1. 安装 Vercel CLI
-```bash
-npm i -g vercel
-```
+#### 在飞书多维表格中添加插件
 
-2. 登录 Vercel
-```bash
-vercel login
-```
+1. 打开任意飞书多维表格
+2. 点击右侧「扩展脚本」或「插件」面板
+3. 选择「添加自定义插件」
+4. 输入插件地址（您的部署 URL）
+5. 点击确认完成添加
 
-3. 部署项目
-```bash
-cd markdown-preview-plugin
-vercel
-```
+#### 使用插件
 
-4. 按提示完成部署，获取部署 URL（如 `https://markdown-preview-plugin.vercel.app`）
+1. 选中包含 Markdown 内容的文本或 URL 单元格
+2. 插件会自动渲染 Markdown 内容
+3. 使用工具栏进行复制、下载、全屏等操作
 
-#### 方式二：通过 GitHub + Vercel 自动部署
-
-1. 将项目推送到 GitHub 仓库
-2. 登录 [Vercel](https://vercel.com)
-3. 点击 "New Project" → 导入 GitHub 仓库
-4. Vercel 会自动检测 Vite 项目并配置好构建设置
-5. 点击 "Deploy" 完成部署
-
-#### 在多维表格中使用
-
-部署成功后，将 Vercel 提供的 URL 填入多维表格的自定义插件地址即可使用。
-
-## 项目结构
+### 📁 项目结构
 
 ```
 markdown-preview-plugin/
+├── dist/                   # 生产构建产物（可直接部署）
 ├── src/
-│   ├── App.tsx         # 主组件，包含核心逻辑
-│   ├── main.tsx        # 入口文件
-│   └── index.css       # 样式文件
-├── index.html          # HTML 模板
-├── package.json        # 项目配置
-├── tsconfig.json       # TypeScript 配置
-└── vite.config.ts      # Vite 配置
+│   ├── App.tsx             # 主应用组件
+│   ├── main.tsx            # 应用入口
+│   └── index.css           # 全局样式
+├── .github/
+│   └── workflows/
+│       └── auto-release.yml  # 自动发布工作流
+├── index.html              # HTML 模板
+├── package.json            # 项目配置
+├── tsconfig.json           # TypeScript 配置
+├── vite.config.ts          # Vite 构建配置
+└── vercel.json             # Vercel 部署配置
 ```
 
-## 技术栈
+### 📄 支持的 Markdown 语法
 
-- React 18
-- TypeScript
-- Vite
-- @lark-base-open/js-sdk - 多维表格 SDK
-- react-markdown - Markdown 渲染
-- remark-gfm - GFM 语法支持
-- rehype-highlight - 代码高亮
+- **基础语法**: 标题、段落、粗体、斜体、删除线
+- **列表**: 有序列表、无序列表、任务列表
+- **代码**: 行内代码、代码块（支持语法高亮）
+- **表格**: GFM 表格语法
+- **引用**: 块引用
+- **链接与图片**: 链接、图片、自动链接
+- **HTML**: 支持内嵌 HTML 标签
+- **Mermaid 图表**: 流程图、时序图、甘特图等
+- **数学公式**: 行内公式 `$...$`、块级公式 `$$...$$`
 
-## Mermaid 图表示例
+### 🔄 版本发布
 
-在代码块中使用 `mermaid` 语言标识：
+项目使用 GitHub Actions 自动发布。当 `package.json` 中的版本号更新并推送到 main/master 分支时，会自动创建对应版本的 Release。
 
-````markdown
-```mermaid
-graph TD
-    A[开始] --> B{判断}
-    B -->|是| C[执行]
-    B -->|否| D[结束]
-    C --> D
+### 📜 许可证
+
+MIT License
+
+### 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request。详见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+
+---
+
+<a name="english"></a>
+## English Documentation
+
+### 📋 Introduction
+
+Markdown Preview Plugin is a sidebar plugin designed for Feishu/Lark Bitable that renders Markdown content from cells in real-time, providing a professional document preview experience.
+
+### ✨ Features
+
+| Feature | Description |
+|---------|-------------|
+| 📝 Live Preview | Automatically renders Markdown content when selecting text or URL cells |
+| 🎨 GFM Support | Full support for GitHub Flavored Markdown syntax |
+| 🌗 Theme Adaptation | Automatically adapts to Bitable's light/dark theme |
+| 💻 Code Highlighting | Syntax highlighting for 180+ programming languages |
+| 📊 Mermaid Diagrams | Support for flowcharts, sequence diagrams, Gantt charts, mind maps, etc. |
+| 🔢 Math Formulas | LaTeX math formula support (KaTeX) |
+| 📋 One-Click Copy | Copy raw Markdown or rendered HTML |
+| 🖥️ Fullscreen Preview | Fullscreen mode for viewing long content |
+| 📥 Export | Export as Markdown file or PNG image |
+| 🔤 Font Size Adjustment | Four font size options |
+
+### 🛠️ Tech Stack
+
+- **Frontend Framework**: React 18 + TypeScript
+- **Build Tool**: Vite 5
+- **Markdown Rendering**: react-markdown + remark-gfm
+- **Code Highlighting**: highlight.js
+- **Math Formulas**: KaTeX
+- **Diagram Rendering**: Mermaid
+- **Feishu SDK**: @lark-base-open/js-sdk
+
+### 📦 Installation & Deployment
+
+#### Option 1: Use Pre-built Files
+
+The project includes a pre-built `dist` directory that can be deployed directly to any static server.
+
+#### Option 2: Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
 ```
-````
 
-## 数学公式示例
+#### Option 3: Deploy to Vercel
 
-行内公式：`$E = mc^2$`
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/markdown-preview-plugin)
 
-块级公式：
-```markdown
-$$
-\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
-$$
-```
+### 📜 License
 
-## 注意事项
+MIT License
 
-- 支持文本类型和 URL 类型字段的 Markdown 渲染
-- 请确保单元格中包含有效的 Markdown 内容
-- Mermaid 图表渲染需要网络环境支持
-- 数学公式使用 KaTeX 渲染，支持大部分 LaTeX 语法
+---
+
+**Made with ❤️ for Feishu Bitable**

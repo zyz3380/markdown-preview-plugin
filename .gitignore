@@ -7,10 +7,15 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
-dist
+
+# OS files
 .DS_Store
+
+# Local env files
 *.local
+.env*.local
 
 # Editor directories and files
 .vscode/*
@@ -21,5 +26,9 @@ dist
 *.njsproj
 *.sln
 *.sw?
+
+# Deployment
 .vercel
-.env*.local
+
+# Note: dist directory is intentionally NOT ignored
+# to allow committing production build files to GitHub
