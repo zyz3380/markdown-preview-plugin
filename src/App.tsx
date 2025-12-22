@@ -1,7 +1,7 @@
 /**
  * @fileoverview Markdown Preview Plugin for Feishu Bitable
  * @description 飞书多维表格 Markdown 预览插件主组件
- * @version 1.0.4
+ * @version 1.0.5
  * @license MIT
  */
 
